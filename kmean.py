@@ -5,20 +5,21 @@ import seaborn as sns
 import matplotlib.pyplot as plt 
 import info
 import kaleido
+import os
+import credentials
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
-# uncleaned dataset
-song_data = pd.read_csv("/Users/VANESSA/Documents/ecs170/project/dataset.csv", encoding = "utf-8")
-genres = song_data['track_genre'].unique().tolist()
+# cleaned dataset
+song_data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
 #pd.set_option('display.max_columns',None)
 #print(song_data.head())
 
 def subset_genre():
-    # averages each feature for each genre 
+    # averages each of the audio features for each genre 
     genre_data = song_data.groupby('track_genre')[info.metrics].mean().reset_index()
     # normalizes the features
     scaler = StandardScaler()
@@ -37,7 +38,6 @@ def elbow_method(df,title):
      -> float data type
     """
     sse = [] #sum of squared error
-    
     data = df[(info.metrics)] # only numerical data
     for k in range(1,11):
         k_mean = KMeans(n_clusters = k, random_state = 2)
@@ -50,20 +50,20 @@ def elbow_method(df,title):
               ylabel = "Sum Squared Error",
               title = title)
     #plt.show()
-
+    
 def elbow_method_genre():
     #applies the elbow method on genre subset
     subset = subset_genre()
     file_name = "kmean_genre.png"
     elbow_method(subset,'genres')
     # saves the graph to your computer
-    plt.savefig("/Users/VANESSA/Documents/ecs170/project/graphs/genres (elbow method)"+file_name)
+    plt.savefig(os.environ['DOWNLOAD_PATH']+file_name)
 
 def genre_cluster():
-    file_name = "k=7_genre.png"
+    file_name = "k=8_genre (clean).png"
     genre_subset = subset_genre()
     # scales the data and applies the k mean clustering algorithm on the scaled data 
-    cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=7))])
+    cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=8))])
     # selects columns with only numeric data types
     X = genre_subset.select_dtypes(np.number)
     cluster_pipeline.fit(X) # trains on data
@@ -79,14 +79,14 @@ def genre_cluster():
     # visualizes the clusters in a 2D space
     fig = px.scatter(projection, x='x', y='y', color='cluster', hover_data=['x','y','cluster','track_genre'])
     fig.update_layout(title='genre cluster') # adds a title
-    fig.write_image("/Users/VANESSA/Documents/ecs170/project/graphs/uncleaned dataset/clusters/"+file_name)
+    fig.write_image(os.environ['DOWNLOAD_PATH']+file_name)
     fig.show()
     
-
+    
 def song_cluster():
-    file_name = "k=3_song.png"
+    file_name = "k=6_song (clean).png"
     # divides into n clusters
-    song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=3,verbose=2))]
+    song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=6,verbose=2))]
                                      ,verbose =True)
     # selects columns with only numeric data types
     X = song_data.select_dtypes(np.number)
@@ -105,7 +105,8 @@ def song_cluster():
 
     # visualizes the song cluster
     fig = px.scatter(projection, x='x', y='y', color='cluster', hover_data=['x','y','cluster','title'])
-    fig.write_image("/Users/VANESSA/Documents/ecs170/project/graphs/uncleaned dataset/clusters/"+file_name)
+    fig.write_image(os.environ['DOWNLOAD_PATH']+file_name)
     fig.show()
+    
     
     
