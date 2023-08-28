@@ -1,0 +1,153 @@
+---
+title: "EDA spotify"
+author: "Jaishree Ramamoorthi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Load the relevant libraries 
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+# Load the dataset into a data frame
+```{r}
+music_data <- read.csv("spotify_music_dataset.csv") 
+```
+
+# Data Cleaning
+```{r}
+music_data <- distinct(music_data)
+music_data <- na.omit(music_data)
+music_data$explicit <- as.logical(music_data$explicit)
+music_data$mode <- as.factor(music_data$mode)
+music_data$time_signature <- as.factor(music_data$time_signature)
+music_data$key <- as.factor(music_data$key)
+```
+
+# Tidy dataset 
+```{r}
+View(music_data)
+```
+
+## Exploratory Data Analysis (EDA)
+
+# Summary statistics
+```{r}
+summary(music_data)
+```
+
+# Distribution of popularity
+```{r}
+ggplot(music_data, aes(x = popularity)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+  labs(title = "Distribution of Popularity")
+```
+
+# Box plot: Popularity by Genre
+```{r}
+# Define custom theme with adjusted dimensions and rotated axis labels
+custom_theme <- theme(
+  plot.title = element_text(size = 16),
+  axis.text.x = element_text(angle = 90, hjust = 1, size = 10),
+  plot.margin = margin(t = 1, r = 1, b = 1, l = 1, unit = "cm")
+)
+
+# Create the box plot with the custom theme
+ggplot(music_data, aes(x = track_genre, y = popularity)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Popularity by Genre", x = "Genre", y = "Popularity") +
+  coord_flip() +
+  scale_y_log10() +
+  custom_theme
+```
+# Scatter plot: Danceability vs. Tempo
+```{r}
+ggplot(music_data, aes(x = danceability, y = tempo)) +
+  geom_point(color = "blue", alpha = 0.7) +
+  labs(title = "Danceability vs. Tempo", x = "Danceability", y = "Tempo") +
+  theme_minimal()
+```
+# Scatter plot: Energy vs. Tempo
+```{r}
+ggplot(music_data, aes(x = energy, y = tempo)) +
+  geom_point(color = "green", alpha = 0.7) +
+  labs(title = "Energy vs. Tempo", x = "Energy", y = "Tempo") +
+  theme_minimal()
+```
+
+# Scatter plot: Mode vs. Danceability
+```{r}
+ggplot(music_data, aes(x = mode, y = danceability)) +
+  geom_boxplot(color = "purple", alpha = 0.7) +
+  labs(title = "Mode vs. Danceability", x = "Mode", y = "Danceability") +
+  theme_minimal()
+```
+
+# Scatter plot: Mode vs. Popularity
+```{r}
+ggplot(music_data, aes(x = mode, y = popularity)) +
+  geom_boxplot(color = "red", alpha = 0.7) +
+  labs(title = "Mode vs. Popularity", x = "Mode", y = "Popularity") +
+  theme_minimal()
+```
+
+# Bar Plot: Genre vs. Mode 
+```{r}
+ggplot(music_data, aes(x = track_genre, fill = mode)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Genre vs. Mode", x = "Genre", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Box plot: Time Signature vs. Tempo
+```{r}
+ggplot(music_data, aes(x = time_signature, y = tempo)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Time Signature vs. Tempo", x = "Time Signature", y = "Tempo") +
+  theme_minimal()
+```
+
+
+# Box plot: Time Signature vs. Danceability
+```{r}
+ggplot(music_data, aes(x = time_signature, y = danceability)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Time Signature vs. Danceability", x = "Time Signature", y = "Danceability") +
+  theme_minimal()
+```
+
+# Scatter plot: Genre vs. Tempo
+```{r}
+ggplot(music_data, aes(x = track_genre, y = tempo)) +
+  geom_point(color = "blue", alpha = 0.7) +
+  labs(title = "Genre vs. Tempo", x = "Genre", y = "Tempo") +
+  theme_minimal()
+```
+
+# Scatter plot: Danceability vs. Speechiness
+```{r}
+ggplot(music_data, aes(x = danceability, y = speechiness)) +
+  geom_point(color = "red", alpha = 0.7) +
+  labs(title = "Danceability vs. Speechiness", x = "Danceability", y = "Speechiness") +
+  theme_minimal() + coord_flip()
+```
+
+# Scatter plot: Energy vs. Loudness
+```{r}
+ggplot(music_data, aes(x = energy, y = loudness)) +
+  geom_point(color = "orange", alpha = 0.7) +
+  labs(title = "Energy vs. Loudness", x = "Energy", y = "Loudness") +
+  theme_minimal() + coord_flip()
+```
+
+
+
+
+
+
+
+
