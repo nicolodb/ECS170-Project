@@ -1,7 +1,7 @@
 # description
-this is just a bunch of graphs!
+this is just a bunch of graphs from the uncleaned dataset!  
 k_mean_song: used to find the most optimal number of clusters  
-  -> k=[number]_song: experimenting with different number of clusters  
+  -> k=[number]_song: just experimenting with different number of clusters  
     -> [number] = the number of clusters  
   -> the most optimal would be either 5 or 6 clusters  
 
