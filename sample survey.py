@@ -7,7 +7,7 @@ import info
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # make sure to change this to your file path
-data = pd.read_csv("/Users/VANESSA/Documents/ecs170/project/dataset.csv", encoding = "utf-8")
+data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
 columns = data.columns
 # you can get your own client id and client secret by creating an app on spotify for developers
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=os.environ['SPOTIFY_CLIENT_ID'],client_secret=os.environ['SPOTIFY_CLIENT_SECRET']))
@@ -41,7 +41,7 @@ def responses():
                  "Thank you for answering!", "Nice answer!",
                  "Good choice!", "Of course!", "Alright!",
                  "I'll get right on that!", "You have great taste!"]
-    print(random.choice(responses))
+    print("\n"+random.choice(responses))
 
 def usage(number,answer_options, q):
     # how to answer the question + the options 
@@ -54,13 +54,13 @@ def usage(number,answer_options, q):
     # how to answer a likert scale
     elif number == 2:
         print(*answer_options,sep="     ")
-        print("none           ",
-              "neutral           ",
+        print("none     ",
+              "neutral     ",
               "alot")
     # how to enter a song
     elif number == 3:
         print("\nPlease enter your song using the following format: [song name],[artist],[year]")
-        print("\t-> example: Billie Jean, Michael Jackson, 1983")
+        print("\t-> example: Billie Jean, Michael Jackson, 1982")
         print("\t-> It's fine if you don't know the year, it's just to make sure we get the exact version of the song!")
         
 def check_method(type, answer, answer_options):
@@ -89,9 +89,9 @@ def question(answer_options,type,u_index,q_index):
         
 def likert_scale():
     answers = []
-    scale = [1,2,3,4,5,6,7]
+    scale = [1,2,3,4,5]
     for metric in info.metrics:
-                print("On a scale of 1-7, how much",metric,"do you want?")
+                print("On a scale of 1-5, how much",metric,"do you want?")
                 print("\ndefinition:",info.definitions[metric],"\n")
                 answer = question(scale,'n/a',2,0)
                 answers.append(answer)
@@ -107,7 +107,7 @@ def validate_song():
             # if there's a row that has matches both the song name and artist, 'row' will be initalized to that row 
             row = data[(data['track_name'] == trimmed[0]) & (data['artists'].apply(lambda x: trimmed[1].strip() in str(x)))]
             # if the song exists in spotify's catalog, 'results' will be initalized to it 
-            results = sp.search(q = 'tracks: {}, year{}'.format(trimmed[0],trimmed[-1]),limit=1)
+            results = sp.search(q = 'tracks: {}, artist{}, year{}'.format(trimmed[0],trimmed[1],trimmed[-1]),limit=1)
             return [trimmed,row,results]
         except:
             error(1)
