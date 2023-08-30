@@ -2,7 +2,9 @@
 title: "EDA spotify"
 author: "Jaishree Ramamoorthi"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 # Load the relevant libraries 
@@ -29,7 +31,9 @@ music_data$key <- as.factor(music_data$key)
 
 # Tidy dataset 
 ```{r}
-View(music_data)
+write.csv(music_data, file = "tidy_spotify_data.csv", row.names = FALSE)
+tidy_spotify_data <- read.csv("tidy_spotify_data.csv")
+View(tidy_spotify_data)
 ```
 
 ## Exploratory Data Analysis (EDA)
