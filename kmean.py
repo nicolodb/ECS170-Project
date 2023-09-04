@@ -15,11 +15,11 @@ from sklearn.decomposition import PCA
 
 # cleaned dataset
 song_data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
-#pd.set_option('display.max_columns',None)
+pd.set_option('display.max_columns',None)
 #print(song_data.head())
 
 def subset_genre():
-    # averages each of the audio features for each genre 
+    # averages each the audio features for each genre 
     genre_data = song_data.groupby('track_genre')[info.metrics].mean().reset_index()
     # normalizes the features
     scaler = StandardScaler()
@@ -59,16 +59,8 @@ def elbow_method_genre():
     # saves the graph to your computer
     plt.savefig(os.environ['DOWNLOAD_PATH']+file_name)
 
-def genre_cluster():
+def genre_graph(X, genre_subset):
     file_name = "k=8_genre (clean).png"
-    genre_subset = subset_genre()
-    # scales the data and applies the k mean clustering algorithm on the scaled data 
-    cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=8))])
-    # selects columns with only numeric data types
-    X = genre_subset.select_dtypes(np.number)
-    cluster_pipeline.fit(X) # trains on data
-    genre_subset.loc[:,'cluster'] = cluster_pipeline.predict(X) # makes predictions
-    
     # compresses the data into a 2D space so it's easier to visualize 
     tsne_pipeline = Pipeline([('scaler',StandardScaler()),('tsne',TSNE(n_components=2,verbose=2))])
     genre_embedding = tsne_pipeline.fit_transform(X)
@@ -81,21 +73,20 @@ def genre_cluster():
     fig.update_layout(title='genre cluster') # adds a title
     fig.write_image(os.environ['DOWNLOAD_PATH']+file_name)
     fig.show()
-    
-    
-def song_cluster():
-    file_name = "k=6_song (clean).png"
-    # divides into n clusters
-    song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=6,verbose=2))]
-                                     ,verbose =True)
-    # selects columns with only numeric data types
-    X = song_data.select_dtypes(np.number)
-    # creates a list of all the column names
-    number_cols = list(X.columns)
-    song_cluster_pipeline.fit(X)
-    song_cluster_labels = song_cluster_pipeline.predict(X)
-    song_data['cluster_label'] = song_cluster_labels
 
+def genre_cluster():
+    genre_subset = subset_genre()
+    # scales the data and applies the k mean clustering algorithm on the scaled data 
+    cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=8))])
+    # selects columns with only numeric data types
+    X = genre_subset.select_dtypes(np.number)
+    cluster_pipeline.fit(X) # trains on data
+    genre_subset.loc[:,'cluster'] = cluster_pipeline.predict(X) # makes predictions
+    genre_graph(X,genre_subset)
+    
+
+def song_graph(X):
+    file_name = "k=6_song (clean).png"
     # compresses the data
     pca_pipeline = Pipeline([('scaler', StandardScaler()),  ('PCA',PCA(n_components=2))])
     song_embedding = pca_pipeline.fit_transform(X)
@@ -107,6 +98,20 @@ def song_cluster():
     fig = px.scatter(projection, x='x', y='y', color='cluster', hover_data=['x','y','cluster','title'])
     fig.write_image(os.environ['DOWNLOAD_PATH']+file_name)
     fig.show()
+    
+def song_cluster():
+    # divides into n clusters
+    song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=6,verbose=2))]
+                                     ,verbose =True)
+    # selects columns with only numeric data types
+    X = song_data.select_dtypes(np.number)
+    features = X.iloc[:,2:15]
+    song_cluster_pipeline.fit(features)
+    song_cluster_labels = song_cluster_pipeline.predict(features)
+    song_data['cluster_label'] = song_cluster_labels
+    #song_graph(X)
+    return song_cluster_pipeline, song_cluster_labels, song_data
+
     
     
     
