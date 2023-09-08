@@ -62,7 +62,7 @@ def elbow_method_genre():
 def genre_graph(X, genre_subset):
     file_name = "k=8_genre (clean).png"
     # compresses the data into a 2D space so it's easier to visualize 
-    tsne_pipeline = Pipeline([('scaler',StandardScaler()),('tsne',TSNE(n_components=2,verbose=2))])
+    tsne_pipeline = Pipeline([('scaler',StandardScaler()),('tsne',TSNE(n_components=2,verbose=0))])
     genre_embedding = tsne_pipeline.fit_transform(X)
     projection = pd.DataFrame(columns=['x','y'],data=genre_embedding)
     projection['track_genre'] = genre_subset['track_genre']
@@ -81,8 +81,9 @@ def genre_cluster():
     # selects columns with only numeric data types
     X = genre_subset.select_dtypes(np.number)
     cluster_pipeline.fit(X) # trains on data
-    genre_subset.loc[:,'cluster'] = cluster_pipeline.predict(X) # makes predictions
-    genre_graph(X,genre_subset)
+    genre_subset.loc[:,'cluster_label'] = cluster_pipeline.predict(X) # makes predictions
+    #genre_graph(X,genre_subset)
+    return cluster_pipeline, genre_subset
     
 
 def song_graph(X):
@@ -101,7 +102,7 @@ def song_graph(X):
     
 def song_cluster():
     # divides into n clusters
-    song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=6,verbose=2))]
+    song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=6,verbose=0))]
                                      ,verbose =True)
     # selects columns with only numeric data types
     X = song_data.select_dtypes(np.number)
@@ -112,6 +113,8 @@ def song_cluster():
     #song_graph(X)
     return song_cluster_pipeline, song_cluster_labels, song_data
 
+
     
+
     
     
