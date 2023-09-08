@@ -386,9 +386,6 @@ def get_recs(ss,up,mv,profile):
     loading_animation()
     # list of songs already being recommended 
     recs = []
-    print("ss",ss,"\n")
-    print("up",up,"\n")
-    print("mv",mv,"\n")
     ex = profile[0]
     method_ss = pick_random(6,ss,recs,ex)
     recs.append(method_ss)
