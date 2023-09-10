@@ -18,12 +18,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
 """
-this is pretty much finished! it's still a little inconsistent (sometimes it will give zero recs), but for our purposes, i think it's good enough.
+this is pretty much finished! it's still a little inconsistent (sometimes it will give zero recs).
 also, more error handling needs to be added and maybe also more filtering/finetuning.
 feel free to add new features or improve some of the functions! :)
 
 note:
-    for some reason a lot of the recommendation tends to be genres such as dubstep and metal, idk if that's a problem with my implementation/filtering or the dataset itself
+    for some reason a lot of the recommendation tends to be genres such as dubstep and metal, idk if that's a problem with my implementation/filtering
+    or the dataset itself
     -> so naturally, the recommendations are better when the user has a song list of songs in those genres 
 """
 
@@ -56,6 +57,7 @@ def extract_features(name, artist):
     # not in the catalog
     if results['tracks']['items'] == []:
         return None
+    
     results = results['tracks']['items'][0]
     track_id = results['id']
     audio_features = sp.audio_features(track_id)[0]
@@ -102,6 +104,8 @@ def mean_vector(song_list, dataset, columns):
     # keep track of songs we can't find. can't find 3+ -> user takes the survey again
     # hasn't been implemented yet, but not incredibly important to do so 
     count = 0
+    max_columns = len(columns)
+    max_len = 0
     for song in song_list:
         data = get_data(song[0],song[1],dataset)
         # song data cannot be found 
@@ -113,7 +117,16 @@ def mean_vector(song_list, dataset, columns):
         if count > 2:
             error(2)
         song_vector = data[columns].values
+        max_len = max(max_len, len(song_vector))
+        
+        # if the columns is less than the max/expected number of columns
+        # then we pad the vector with zeros 
+        if len(song_vector) < max_len:       
+            padding = np.zeros((max_len - len(song_vector),max_columns))
+            song_vector = np.concatenate((song_vector,padding),axis=0)
+                               
         vectors.append(song_vector)
+
     matrix = np.array(list(vectors))
     return np.mean(matrix, axis=0)
 
@@ -129,8 +142,8 @@ def scaled(data,scaler,columns=None):
     else:
         if columns != None:
             scaled_data = scaler.transform(data[columns])
-        #else:
-            #scaled_data = scaler.transform(data)
+        else:
+            scaled_data = scaler.transform(data)
     return scaled_data
 
 def assign_user(pipeline,scaler, user_profile):
@@ -249,7 +262,7 @@ def pop_filtering(num,cs,cluster_songs,genres=None):
     if genres != None:
         valid_recs = genre_filtering(genres,top_songs)
     # gets the songs that satisfy the popularity threshold 
-    filtered_songs = [item for item in valid_recs if item[-1] >= 60]
+    filtered_songs = [item for item in valid_recs if item[-1] >= 55]
     # gets rid of duplicates
     filtered_songs = [song for index, song in enumerate(filtered_songs) if song not in filtered_songs[:index]]
     return filtered_songs
@@ -295,7 +308,7 @@ def similar_songs(song_list,song_data,s_pipeline,scaler,columns,g_pipeline, subs
             continue
         # gets the song recommendation
         filtered_songs = make_recs(data,scaler,columns,g_pipeline,
-                                  subset,song_data,800,s_pipeline,looped)
+                                  subset,song_data,1000,s_pipeline,looped)
         recs.extend(filtered_songs)
         looped = True
     return recs
@@ -319,7 +332,7 @@ def user_pref_songs(profile,song_data,pipeline,scaler,columns,g_pipeline,subset)
     # calculates the cosine similarity between the user's audio preference and the songs in the cluster
     cs = cosine_sim(scaled_profile,scaled_songs)
     # filter songs by popularity
-    filtered_songs = pop_filtering(800,cs,cluster_songs,genres)
+    filtered_songs = pop_filtering(1000,cs,cluster_songs,genres)
     return filtered_songs
 
 def vector_recs(center,song_data,profile,pipeline,scaler,g_pipeline,subset,columns):
@@ -332,7 +345,7 @@ def vector_recs(center,song_data,profile,pipeline,scaler,g_pipeline,subset,colum
     """
     # converts into a dataframe 
     df_center = pd.DataFrame(center,columns=columns)
-    filter_songs = make_recs(df_center,scaler,columns,g_pipeline,subset,song_data,800,pipeline)
+    filter_songs = make_recs(df_center,scaler,columns,g_pipeline,subset,song_data,1000,pipeline)
     return filter_songs 
 
 
@@ -373,18 +386,22 @@ def print_recs(recs):
     """
     prints the track name and artist(s)
     """
+    print("---------------------------------")
+    count = 1
     if recs == []:
         print("\nSorry! We couldn't recommend any songs. :(\n")
     for rec in recs:
+        print(f'{count}. ',end='')
+        count+=1
         try:
-            print(f"Name: {rec[0]}, Artist(s): {rec[1]}")
+            print(f"{rec[0]} by {rec[1]}")
         except:
             for info in rec:
-                print(f"Name: {info[0]}, Artist(s): {info[1]}")
+                print(f"{info[0]} by {info[1]}")
 
 def get_recs(ss,up,mv,profile):
     loading_animation()
-    # list of songs already being recommended 
+    # list of songs that already been recommended 
     recs = []
     ex = profile[0]
     method_ss = pick_random(6,ss,recs,ex)
@@ -392,13 +409,15 @@ def get_recs(ss,up,mv,profile):
     method_up = pick_random(2,up,recs,ex)
     recs.append(method_up)
     method_mv = pick_random(2,mv,recs,ex)
-    print("\nHere is your recommendations!\n")
-    print("Based on your song list:\n")
+    print("\n---------------------------------")
+    print("\nHere is your recommendations!")
+    print("\nBased on your song list:")
     print_recs(method_ss)
-    print("\nBased on your audio preferences:\n")
+    print("\nBased on your audio preferences:")
     print_recs(method_up)
-    print("\nBased on the mean vector of your song list:\n")
+    print("\nBased on the mean vector of your song list:")
     print_recs(method_mv)
+    print()
     
 def recommend(dataset,profile, n=10):
     """
@@ -409,6 +428,7 @@ def recommend(dataset,profile, n=10):
     """
     print("\nMaking your recommendations...\n")
     loading_animation()
+    
     # supresses all the clustering and scaling warnings
     original_filters = warnings.filters[:]
     warnings.filterwarnings("ignore")
@@ -423,6 +443,7 @@ def recommend(dataset,profile, n=10):
     # calculates the mean vector 
     center = mean_vector(profile[-1], dataset,columns)
     scaler = pipeline.named_steps['scaler']
+    
     # method one
     ss = similar_songs(profile[-1],song_data,pipeline,scaler,columns, g_pipeline,subset)
     # method two 
@@ -440,7 +461,5 @@ def run():
     recommend(data,user_profile)
     
 run()
-    
-            
-
+        
             
