@@ -59,9 +59,8 @@ def usage(number,answer_options, q):
               "alot")
     # how to enter a song
     elif number == 3:
-        print("\nPlease enter your song using the following format: [song name],[artist],[year]")
-        print("\t-> example: Billie Jean, Michael Jackson, 1982")
-        print("\t-> It's fine if you don't know the year, it's just to make sure we get the exact version of the song!")
+        print("\nPlease enter your song using the following format: [song name],[artist]")
+        print("\t-> example: Billie Jean, Michael Jackson")
         
 def check_method(type, answer, answer_options):
      if type == 'text':
@@ -163,4 +162,3 @@ def survey():
     song_list = find_song()
     
     return [explicit,curr_genres,metrics,song_list]
-
