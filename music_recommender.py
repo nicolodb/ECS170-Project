@@ -43,7 +43,10 @@ def loading_animation():
         for char in chars:
             sys.stdout.write(f"\rLoading... {char}   ")
             sys.stdout.flush()
-            time.sleep(0.1)
+            time.sleep(0.05)
+
+def processing(message="Processing..."):
+    print(message, end="\r")
             
 def extract_features(name, artist):
     """
@@ -66,6 +69,7 @@ def extract_features(name, artist):
     song_data['explicit'] = [int(results['explicit'])]
     song_data['popularity'] = [results['popularity']]
     song_data['duration_ms'] = [results['duration_ms']]
+    
     for key, value in audio_features.items():
         song_data[key] = value
     
@@ -118,7 +122,6 @@ def mean_vector(song_list, dataset, columns):
             error(2)
         song_vector = data[columns].values
         max_len = max(max_len, len(song_vector))
-        
         # if the columns is less than the max/expected number of columns
         # then we pad the vector with zeros 
         if len(song_vector) < max_len:       
@@ -142,8 +145,6 @@ def scaled(data,scaler,columns=None):
     else:
         if columns != None:
             scaled_data = scaler.transform(data[columns])
-        else:
-            scaled_data = scaler.transform(data)
     return scaled_data
 
 def assign_user(pipeline,scaler, user_profile):
@@ -178,10 +179,53 @@ def map_likert(metrics):
         mapped.append(value)
     return mapped
 
+def calculate_score(song,rec,dataset):
+    """
+    calculates the weighted euclidean distance between two songs
+    """
+    similarity = 0
+    # get the song data
+    rec_data = get_data(rec[0],rec[1],dataset)    
+    song_data = get_data(song[0],song[1],dataset)
+    rec_data = rec_data.copy()
+    song_data = song_data.copy()
 
+    # gets rid of the different versions of the songs 
+    song_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
+    rec_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
+    
+    # loop through each feature and calculates the weighted euclidean distance
+    for feature, weight in info.feature_weights.items():
+        # zero weight = unimportant feature
+        if weight == 0:
+            continue
+        diff = rec_data[feature].values - song_data[feature].values
+        similarity += weight * np.sum(diff**2)
+    return rec_data['explicit'], similarity
+
+def feature_score(songs,recs,dataset):
+    """
+    calculates a score between the song and potential recs based on their
+    audio features. this takes account for the feature weighting
+    (i.e. prioritizes the combo of features with higher correlations)
+    """
+    new_recs = []
+    scores = []
+    song = songs[0]
+    
+    for rec in recs:
+        # calculates the weighted similarity scores
+        explicit,similarity = calculate_score(song,rec,dataset)
+        scores.append({'song':rec[0],'artist':rec[1], 'explicit':explicit,'similarity':similarity})
+    # sorts in descending order
+    scores.sort(key=lambda x: x['similarity'], reverse=True)
+    new_recs.append(scores)
+    top = new_recs[:15]
+    return top
+    
 def popularity(num,cs):
     """
-    sorts by popularity then returns the num number of songs
+    sorts by popularity then returns the num songs
     """
     indices = np.argsort(cs[0])[::-1]
     top_num = indices[:num]
@@ -219,7 +263,7 @@ def get_genre_cluster(data,pipeline,subset,looped=False):
     genres = [genre for genre in cluster_genres['track_genre']]
     """
     only adds the nearby cluster once. if the user's song list contains a variety of genres, we
-    might end up adding every cluster, making hard to make a tailored recommendation.
+    might end up adding every cluster, making it hard to make a tailored recommendation.
     """
     if looped == False:
         # finds the genres in a nearby cluster for diversity
@@ -252,7 +296,7 @@ def pop_filtering(num,cs,cluster_songs,genres=None):
     """
     filters the recommendations to only include songs whose popularity
     satisfies an arbitrary popularity threshold
-     - fyi iirc the average popularity is ~33
+     - iirc the average popularity is ~33
     """
     # gets the num top songs
     top = popularity(num,cs)
@@ -333,6 +377,7 @@ def user_pref_songs(profile,song_data,pipeline,scaler,columns,g_pipeline,subset)
     cs = cosine_sim(scaled_profile,scaled_songs)
     # filter songs by popularity
     filtered_songs = pop_filtering(1000,cs,cluster_songs,genres)
+    
     return filtered_songs
 
 def vector_recs(center,song_data,profile,pipeline,scaler,g_pipeline,subset,columns):
@@ -361,11 +406,16 @@ def filtered(answer,song):
     return 0
 
 
-def pick_random(num,songs,curr_recs,explicit):
+def pick_random(num,songs,curr_recs,explicit,dataset,c_song):
     """"
     randomly picks num songs
     """
     recs = []
+    max_inter = num * 100
+    iters = 0
+    loading_animation()
+    scores = feature_score(c_song,songs,dataset)
+
     # not enough songs
     if len(songs) < num:
         if len(songs) == 0:
@@ -373,13 +423,29 @@ def pick_random(num,songs,curr_recs,explicit):
         return songs
             
     while len(recs) < num:
-        song = random.choice(songs)
+        
+        if iters >= max_inter:
+            break
+        
+        # half of the songs take account of the weighted features
+        if len(recs) < num/2:
+            temp = random.choice(scores)
+            s_temp = random.choice(temp)
+            song = [s_temp['song'],s_temp['artist'],s_temp['explicit']]
+        # other half is just randomly selected 
+        else:
+            song = random.choice(songs)
+
+        # filters out explcit music 
         if filtered(explicit,song) == 1:
-            continue 
+            continue
+        
         if song not in curr_recs and song not in recs:
+            if [song] not in recs:
                 recs.append(song)
                 if len(recs) == num:
-                    break 
+                    break
+        iters +=1
     return recs
 
 def print_recs(recs):
@@ -390,6 +456,7 @@ def print_recs(recs):
     count = 1
     if recs == []:
         print("\nSorry! We couldn't recommend any songs. :(\n")
+        
     for rec in recs:
         print(f'{count}. ',end='')
         count+=1
@@ -399,16 +466,22 @@ def print_recs(recs):
             for info in rec:
                 print(f"{info[0]} by {info[1]}")
 
-def get_recs(ss,up,mv,profile):
+def get_recs(ss,up,mv,profile,dataset):
     loading_animation()
+    processing("Performing a time-consuming task....")
+
     # list of songs that already been recommended 
     recs = []
     ex = profile[0]
-    method_ss = pick_random(6,ss,recs,ex)
+    song_list = profile[-1]
+    song = profile[-1][0]
+    
+    method_ss = pick_random(6,ss,recs,ex,dataset,song)
     recs.append(method_ss)
-    method_up = pick_random(2,up,recs,ex)
+    method_up = pick_random(2,up,recs,ex,dataset,song)
     recs.append(method_up)
-    method_mv = pick_random(2,mv,recs,ex)
+    method_mv = pick_random(2,mv,recs,ex,dataset,song)
+    
     print("\n---------------------------------")
     print("\nHere is your recommendations!")
     print("\nBased on your song list:")
@@ -451,15 +524,17 @@ def recommend(dataset,profile, n=10):
     # method three 
     mv = vector_recs(center,song_data,profile,pipeline,scaler,g_pipeline,subset,columns)
     warnings.filters = original_filters
-    get_recs(ss,up,mv,profile)
+    get_recs(ss,up,mv,profile,dataset)
     
 def run():
     data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
     print("\nPlease take this survey so we can get a better idea of your music preferences!\n")
     print("----------------------------------------")
     user_profile = survey()
+    #print(user_profile)
     recommend(data,user_profile)
     
 run()
         
+            
             
