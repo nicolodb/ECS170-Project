@@ -103,7 +103,7 @@ def song_graph(X):
 def song_cluster():
     # divides into n clusters
     song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),('kmeans',KMeans(n_clusters=6,verbose=0))]
-                                     ,verbose =True)
+                                     ,verbose =False)
     # selects columns with only numeric data types
     X = song_data.select_dtypes(np.number)
     features = X.iloc[:,2:15]
