@@ -1,0 +1,85 @@
+---
+title: "EDA Spotify Part 2"
+author: "Jaishree Ramamoorthi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+# Load the relevant libraries 
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(shiny)
+```
+
+# Load the TIDY dataset into a data frame
+```{r}
+music_data <- read.csv("tidy_spotify_data.csv") 
+View(music_data)
+```
+
+## Exploring the Data 
+
+# Grouping by Artists and Genres 
+```{r}
+music_data %>% group_by("artists")
+```
+
+
+# Frequency of Each Artist 
+```{r}
+# Create a bar plot of artist frequencies
+artist_freq <- music_data %>%
+  count(artists) %>%
+  arrange(desc(n)) %>%
+  top_n(50)  
+
+# Create the bar plot
+ggplot(artist_freq, aes(x = reorder(artists, n), y = n)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(x = "Artist", y = "Frequency") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Top 50 Artists by Frequency")
+```
+# Frequency of Each Genre 
+```{r}
+# Create a bar plot of genre frequencies
+genre_freq <- music_data %>%
+  count(track_genre) %>%
+  arrange(desc(n))
+
+# Create the bar plot
+ggplot(genre_freq, aes(x = reorder(track_genre, n), y = .01*n)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(x = "Genre", y = "Frequency") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Genre Frequency Distribution") +
+  scale_y_log10()
+```
+# Frequency of Each Album Grouped by Genre
+```{r}
+# Create a table of album frequencies grouped by genre
+album_genre_freq <- music_data %>%
+  group_by(track_genre, album_name) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  arrange(track_genre, desc(n)) %>%
+  top_n(20, n)  #
+
+# Create the stacked bar plot
+ggplot(album_genre_freq, aes(x = reorder(album_name, n), y = n, fill = track_genre)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Album", y = "Frequency") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Top 10 Albums by Frequency (Grouped by Genre)") +
+  scale_fill_brewer(palette = "Set3")  # You can choose a different color palette if needed
+
+```
+

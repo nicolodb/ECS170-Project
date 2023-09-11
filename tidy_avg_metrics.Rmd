@@ -1,0 +1,75 @@
+---
+title: "shiny_app"
+author: "Jaishree Ramamoorthi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Load the libraries
+```{r}
+library(shiny)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
+```
+
+# Load the TIDY dataset into a data frame
+```{r}
+music_data <- read_csv("tidy_spotify_data.csv")
+str(music_data)
+```
+
+# Calculate average metric for each artist & write a CSV file 
+```{r}
+artist_avg_metrics <- music_data %>%
+  group_by(artists) %>%
+  summarize(
+    avg_popularity = mean(popularity),
+    avg_duration_ms = mean(duration_ms),
+    avg_danceability = mean(danceability),
+    avg_energy = mean(energy),
+    avg_key = mean(key),
+    avg_loudness = mean(loudness),
+    avg_mode = mean(mode),
+    avg_speechiness = mean(speechiness),
+    avg_acousticness = mean(acousticness),
+    avg_instrumentalness = mean(instrumentalness),
+    avg_liveness = mean(liveness),
+    avg_valence = mean(valence),
+    avg_tempo = mean(tempo),
+    avg_time_signature = mean(time_signature)
+  )
+write.csv(artist_avg_metrics, file = "artist_avg_metrics.csv", row.names = FALSE)
+```
+
+# Calculate average metrics for each genre & write a CSV file 
+```{r}
+genre_avg_metrics <- music_data %>%
+  group_by(track_genre) %>%
+  summarize(
+    avg_popularity = mean(popularity),
+    avg_duration_ms = mean(duration_ms),
+    avg_danceability = mean(danceability),
+    avg_energy = mean(energy),
+    avg_key = mean(key),
+    avg_loudness = mean(loudness),
+    avg_mode = mean(mode),
+    avg_speechiness = mean(speechiness),
+    avg_acousticness = mean(acousticness),
+    avg_instrumentalness = mean(instrumentalness),
+    avg_liveness = mean(liveness),
+    avg_valence = mean(valence),
+    avg_tempo = mean(tempo),
+    avg_time_signature = mean(time_signature)
+  )
+write.csv(genre_avg_metrics, file = "genre_avg_metrics.csv", row.names = FALSE)
+```
+
+# View datasets 
+```{r}
+artist_avg_metrics_df <- read_csv("artist_avg_metrics.csv")
+View(artist_avg_metrics_df)
+genre_avg_metrics_df <- read_csv("genre_avg_metrics.csv")
+View(genre_avg_metrics_df)
+```
+

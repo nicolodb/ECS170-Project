@@ -1,0 +1,98 @@
+---
+title: "Spotify Data Correlation Matrix"
+output: html_notebook
+---
+
+# Load the relevant libraries 
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(shiny)
+```
+
+# Load the TIDY dataset into a data frame
+```{r}
+music_data <- read.csv("tidy_spotify_data.csv") 
+View(music_data)
+```
+
+# List the names of all variables and their classes 
+```{r}
+sapply(music_data, function(x) class(x))
+```
+
+# Select the numerical variables for correlation analysis
+numerical_variables <- your_data[, c("NumericVar1", "NumericVar2", "NumericVar3")]
+```{r}
+num_variables <- music_data[, c("danceability", "mode", "liveness", "popularity", "energy", "speechiness", "valence", "duration_ms", "key", "acousticness", "tempo", "loudness", "instrumentalness", "time_signature")]
+```
+
+# Calculate the correlation matrix for numerical variables
+```{r}
+cor_matrix <- cor(num_variables)
+View(cor_matrix)
+```
+
+# Set your significance level 
+```{r}
+alpha <- 0.05
+```
+
+# Create a matrix to store p-values
+```{r}
+p_values_matrix <- matrix(NA, ncol = ncol(cor_matrix), nrow = nrow(cor_matrix))
+```
+
+# Loop through the rows and columns of the correlation matrix
+```{r}
+for (i in 1:ncol(cor_matrix)) {
+  for (j in 1:ncol(cor_matrix)) {
+    if (i == j) {
+      p_values_matrix[i, j] <- 1  # Skip diagonal (correlation with itself)
+    } else {
+      correlation_test <- cor.test(cor_matrix[i, ], cor_matrix[j, ])
+      p_values_matrix[i, j] <- correlation_test$p.value
+    }
+  }
+}
+```
+
+# Create a matrix of significant correlations
+```{r}
+sig_cors <- abs(cor_matrix) * (p_values_matrix < alpha)
+View(sig_cors)
+```
+
+# Filter out cells equal to 0 (non-significant correlations)
+```{r}
+# Filter out cells equal to 0 (non-significant correlations)
+sig_pairs <- which(sig_cors != 0, arr.ind = TRUE)
+
+# Get the variable names and correlation values involved in each significant correlation
+sig_cors_tidy <- data.frame(
+  row_var = rownames(sig_cors)[sig_pairs[, 1]],
+  col_var = colnames(sig_cors)[sig_pairs[, 2]],
+  cor_val = sig_cors[sig_pairs]
+)
+
+# Create a unique identifier for each correlation pair
+sig_cors_tidy$pair_id <- ifelse(sig_cors_tidy$row_var < sig_cors_tidy$col_var, 
+                                paste(sig_cors_tidy$row_var, sig_cors_tidy$col_var, sep = "_"), 
+                                paste(sig_cors_tidy$col_var, sig_cors_tidy$row_var, sep = "_"))
+
+# Remove duplicates based on the unique identifier
+sig_cors_tidy <- sig_cors_tidy[!duplicated(sig_cors_tidy$pair_id), ]
+
+# Order pairs in descending order (highest correlation value at the top)
+sig_cors_tidy <- sig_cors_tidy %>% 
+  arrange(desc(cor_val))
+
+# Remove the pair_id column if you don't need it
+sig_cors_tidy <- sig_cors_tidy[, -4]
+
+# Print the variable pairs and their correlation values involved in significant correlations
+print(sig_cors_tidy)
+```
+
+
