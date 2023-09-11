@@ -23,3 +23,8 @@ genre_index = ['danceability','energy','loudness','speechiness','acousticness',
 likert_mapping = {"danceability": [0,.25,5,.75,1],"energy":[0,.25,.5,.75,1],"loudness":[-49.531,-20,-5,0,4.532],
                   "speechiness":[0,.193,.386,.772,.965], "acousticness":[0,.25,.5,.75,1], "instrumentalness":[0,.25,.5,.75,1],
                   "liveness": [0,.25,.5,.75,1], "valence": [0,.25,.5,.75,1], "tempo": [0,30,60.8,121,243.372]}
+
+feature_weights = {'danceability': .1, 'energy': 0.3, 'loudness': 0.25, 'speechiness':0,
+                   'acousticness':.15,'instrumentalness':.1, 'liveness':0,
+                   'tempo':0,'valence':.1}
+                   
