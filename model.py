@@ -549,7 +549,7 @@ def recommend(dataset,profile, n=10):
     # Adds recommendations into a new file called recommendations.txt
     recommendations = []
     for i in range(n):
-        recommended_song = f"Recommended Song {i + 1}"  # Replace with your recommendation logic
+        recommended_song = f"Recommended Song {get_recs() + 1}"  # Replace with your recommendation logic
         recommendations.append(recommended_song)
     
     # Append recommendations to recommendations.txt
