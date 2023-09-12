@@ -183,20 +183,20 @@ def map_likert(metrics):
         mapped.append(value)
     return mapped
 
-def calculate_score(song,rec,dataset):
+def calculate_score(song_data,rec,dataset):
     """
     calculates the weighted euclidean distance between two songs
     """
     similarity = 0
     # get the song data
     rec_data = get_data(rec[0],rec[1],dataset)    
-    song_data = get_data(song[0],song[1],dataset)
     rec_data = rec_data.copy()
     song_data = song_data.copy()
 
     # gets rid of the different versions of the songs 
-    song_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
     rec_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
+    song_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
+
     
     # loop through each feature and calculates the weighted euclidean distance
     for feature, weight in info.feature_weights.items():
@@ -207,7 +207,7 @@ def calculate_score(song,rec,dataset):
         similarity += weight * np.sum(diff**2)
     return rec_data['explicit'], similarity
 
-def feature_score(songs,recs,dataset):
+def feature_score(song_data,recs,dataset):
     """
     calculates a score between the song and potential recs based on their
     audio features. this takes account for the feature weighting
@@ -215,11 +215,10 @@ def feature_score(songs,recs,dataset):
     """
     new_recs = []
     scores = []
-    song = songs[0]
     
     for rec in recs:
         # calculates the weighted similarity scores
-        explicit,similarity = calculate_score(song,rec,dataset)
+        explicit,similarity = calculate_score(song_data,rec,dataset)
         scores.append({'song':rec[0],'artist':rec[1], 'explicit':explicit,'similarity':similarity})
     # sorts in descending order
     scores.sort(key=lambda x: x['similarity'], reverse=True)
@@ -424,6 +423,9 @@ def pick_random(num,songs,curr_recs,explicit,dataset,c_song):
     if len(songs) < num:
         if len(songs) == 0:
             return recs
+        # get rid of duplicates
+        temp = set(tuple(song) for song in songs)
+        songs = [list(song) for song in temp]
         return songs
             
     while len(recs) < num:
@@ -479,12 +481,12 @@ def get_recs(ss,up,mv,profile,dataset):
     ex = profile[0]
     song_list = profile[-1]
     song = profile[-1][0]
-    
-    method_ss = pick_random(6,ss,recs,ex,dataset,song)
+    song_data = get_data(song[0],song[1],dataset)    
+    method_ss = pick_random(6,ss,recs,ex,dataset,song_data)
     recs.append(method_ss)
-    method_up = pick_random(2,up,recs,ex,dataset,song)
+    method_up = pick_random(2,up,recs,ex,dataset,song_data)
     recs.append(method_up)
-    method_mv = pick_random(2,mv,recs,ex,dataset,song)
+    method_mv = pick_random(2,mv,recs,ex,dataset,song_data)
     recs.append(method_mv)
     print("\n---------------------------------")
     print("\nHere is your recommendations!")
@@ -540,12 +542,12 @@ def recommend(dataset,profile, n=10):
     ss_recommendations = get_recs(ss, up, mv, profile, dataset)
     # Write reccs to file
     with open("recommendations.txt","w") as recommendations_file:
-        i = 0
+        i = 1
         #recs is a nested list
         for methods in ss_recommendations:
             for r in methods:
                 recommendations = (f"Recommended Song {i}: {r[0]} by {r[1]}\n")
-                recommendations_file.write("\n".join(recommendations))
+                recommendations_file.write(recommendations)
                 i+=1
    
 def run():
