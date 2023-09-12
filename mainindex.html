@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Music Recommendations Survey</title>
+    <style>
+        /* Styles for the sleek design */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+
+        h2 {
+            color: #1DB954;
+        }
+
+        label, select, input[type="text"], input[type="radio"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        input[type="submit"] {
+            background-color: #1DB954;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        /* Loading animation styles */
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #1DB954;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Music Preferences Survey</h2>
+    <form id="introForm" action="/get_recommendations" method="post">
+        <!-- Explicit content preference -->
+        <label>Do you prefer explicit content?</label><br>
+        <input type="radio" id="explicitYes" name="explicit" value="Y">
+        <label for="explicitYes">Yes</label><br>
+        <input type="radio" id="explicitNo" name="explicit" value="N">
+        <label for="explicitNo">No</label><br><br>
+
+        <!-- Genre preference (placeholder options) -->
+        <label for="genre">Preferred Genre:</label>
+        <select id="genre" name="genre">
+            <option value="pop">Pop</option>
+            <option value="rock">Rock</option>
+          <option value="rock">Rock</option>
+          <option value="rock">Rock</option>
+          <option value="rock">Rock</option>
+          <option value="rock">Rock</option>
+          <option value="rock">Rock</option>
+          <option value="rock">Rock</option>
+            <!-- Add more genres as needed -->
+        </select><br><br>
+
+        <!-- Placeholder for likert scale questions -->
+        <label for="audioMetric1">Rate your preference for Audio Metric 1 (1-5):</label>
+        <select id="audioMetric1" name="audioMetric1">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select><br><br>
+
+        <!-- Song details (placeholder) -->
+        <label for="songDetails">Enter song details:</label>
+        <input type="text" id="songDetails" name="songDetails"><br><br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    <!-- Loading animation -->
+    <div class="loading">Loading...</div>
+
+    <div id="recommendations">
+        <!-- Recommendations will be displayed here -->
+    </div>
+
+    <script>
+        // AJAX request for dynamic integration with backend
+        document.querySelector('#introForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(e.target);
+
+            // Show loading animation
+            document.querySelector('.loading').style.display = 'block';
+
+            fetch('/get_recommendations', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector('.loading').style.display = 'none';  // Hide loading animation
+                document.getElementById('recommendations').textContent = JSON.stringify(data);
+            });
+        });
+
+     // Function to fetch survey questions from the /survey API
+     function loadSurveyQuestions() {
+            fetch('/survey')
+                .then(response => response.json())
+                .then(data => {
+                    const surveyContainer = document.getElementById('survey-container');
+                    data.forEach(question => {
+                        const questionElement = document.createElement('div');
+                        questionElement.innerHTML = `<p>${question.question}</p>`;
+                        // Create form input elements based on the question type
+                        if (question.type === 'yes_no') {
+                            questionElement.innerHTML += `
+                                <label><input type="radio" name="${question.question}" value="Y"> Yes</label>
+                                <label><input type="radio" name="${question.question}" value="N"> No</label>
+                            `;
+                        } else if (question.type === 'text') {
+                            questionElement.innerHTML += `<input type="text" name="${question.question}" />`;
+                        }
+                        surveyContainer.appendChild(questionElement);
+                    });
+                })
+                .catch(error => console.error('Error loading survey questions:', error));
+        }
+
+        // Function to submit the survey answers to the /recommendations API
+        function submitSurvey() {
+            const surveyAnswers = {};
+            const surveyInputs = document.querySelectorAll('#survey-container input[type="radio"], #survey-container input[type="text"]');
+            surveyInputs.forEach(input => {
+                surveyAnswers[input.name] = input.value;
+            });
+
+            fetch('/recommendations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(surveyAnswers),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const recommendationsContainer = document.getElementById('recommendations-container');
+                recommendationsContainer.innerHTML = '<h2>Music Recommendations:</h2>';
+                if (data.length === 0) {
+                    recommendationsContainer.innerHTML += '<p>No recommendations available.</p>';
+                } else {
+                    const ul = document.createElement('ul');
+                    data.forEach(recommendation => {
+                        const li = document.createElement('li');
+                        li.textContent = recommendation;
+                        ul.appendChild(li);
+                    });
+                    recommendationsContainer.appendChild(ul);
+                }
+            })
+            .catch(error => console.error('Error fetching recommendations:', error));
+        }
+
+        // Load survey questions when the page loads
+        window.addEventListener('load', loadSurveyQuestions);
+
+        // Handle form submission when the submit button is clicked
+        const submitButton = document.getElementById('submit-survey');
+        submitButton.addEventListener('click', submitSurvey);    
+    </script>
+</body>
+
+</html>
