@@ -547,15 +547,10 @@ def recommend(dataset,profile, n=10):
 
 
     # Adds recommendations into a new file called recommendations.txt
-    recommendations = []
-    for i in range(n):
-        recommended_song = f"Recommended Song {get_recs() + 1}"  # Replace with your recommendation logic
-        recommendations.append(recommended_song)
-    
-    # Append recommendations to recommendations.txt
-    with open(RECOMMENDATIONS_FILE_PATH, "a") as recommendations_file:
-        for recommendation in recommendations:
-            recommendations_file.write(f"{recommendation}\n")
+    ss_recommendations = get_recs(ss, up, mv, profile, dataset)
+    recommendations = [f"Recommended Song {i+1}: {ss_recommendations[i]}" for i in range(n)]
+    with open("recommendations.txt", "w") as recommendations_file:
+        recommendations_file.write("\n".join(recommendations))
    
 def run():
     data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
