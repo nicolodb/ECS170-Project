@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Music Recommendations</title>
+    <style>
+        body {
+            background-color: #1DB954;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            padding: 20px;
+        }
+        .recommendations {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px auto;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ECS170: Simple Music Recommendations</h1>
+        <div class="recommendations">
+            <h2>Recommended Songs</h2>
+            <ul>
+                {% for recommendation in recommendations %}
+                    <li>{{ recommendation 1/li>
+                    <li>{{ recommendation 2}}</li>
+                    <li>{{ recommendation 3}}</li>
+                    <li>{{ recommendation 4}}</li>
+                    <li>{{ recommendation 5}}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
