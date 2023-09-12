@@ -485,16 +485,7 @@ def get_recs(ss,up,mv,profile,dataset):
     method_up = pick_random(2,up,recs,ex,dataset,song)
     recs.append(method_up)
     method_mv = pick_random(2,mv,recs,ex,dataset,song)
-    
-    recs = [] # append reccs 
-    # Write reccs to file
-    file = open('recommendations.txt', 'w')
-
-    for rec in recs:
-        file.write(f"{rec}\n")
-
-    file.close()
-    
+    recs.append(method_mv)
     print("\n---------------------------------")
     print("\nHere is your recommendations!")
     print("\nBased on your song list:")
@@ -504,7 +495,8 @@ def get_recs(ss,up,mv,profile,dataset):
     print("\nBased on the mean vector of your song list:")
     print_recs(method_mv)
     print()
-    
+
+    return recs
     
 def recommend(dataset,profile, n=10):
     """
@@ -542,21 +534,25 @@ def recommend(dataset,profile, n=10):
     # method three 
     mv = vector_recs(center,song_data,profile,pipeline,scaler,g_pipeline,subset,columns)
     warnings.filters = original_filters
-    get_recs(ss,up,mv,profile,dataset)
-
 
 
     # Adds recommendations into a new file called recommendations.txt
     ss_recommendations = get_recs(ss, up, mv, profile, dataset)
-    recommendations = [f"Recommended Song {i+1}: {ss_recommendations[i]}" for i in range(n)]
-    with open("recommendations.txt", "w") as recommendations_file:
-        recommendations_file.write("\n".join(recommendations))
+    # Write reccs to file
+    with open("recommendations.txt","w") as recommendations_file:
+        i = 0
+        #recs is a nested list
+        for methods in ss_recommendations:
+            for r in methods:
+                recommendations = (f"Recommended Song {i}: {r[0]} by {r[1]}\n")
+                recommendations_file.write("\n".join(recommendations))
+                i+=1
    
 def run():
     data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
     print("\nPlease take this survey so we can get a better idea of your music preferences!\n")
     print("----------------------------------------")
-    user_profile = survey()
+    #user_profile = survey()
     #print(user_profile)
     recommend(data,user_profile)
     
