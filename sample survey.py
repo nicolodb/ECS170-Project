@@ -156,9 +156,12 @@ def survey():
     if metric == 'Y':
         metrics = likert_scale()
     else:
-        metrics = None
+        print("\nToo bad! You still have to do it! :D\n")
+        print()
+        metrics = likert_scale()
     # question 4-----------
     question_text(4)
     song_list = find_song()
     
     return [explicit,curr_genres,metrics,song_list]
+
