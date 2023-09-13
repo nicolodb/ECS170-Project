@@ -17,6 +17,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
+
 """
 this is pretty much finished! it's still a little inconsistent (sometimes it will give zero recs).
 also, more error handling needs to be added and maybe also more filtering/finetuning.
@@ -123,12 +124,12 @@ def mean_vector(song_list, dataset, columns):
         song_vector = data[columns].values
         max_len = max(max_len, len(song_vector))
         # if the columns is less than the max/expected number of columns
-        # then we pad the vector with zeros 
+        # then we pad the vector with zeros
         if len(song_vector) < max_len:       
             padding = np.zeros((max_len - len(song_vector),max_columns))
             song_vector = np.concatenate((song_vector,padding),axis=0)
-                               
-        vectors.append(song_vector)
+        
+        vectors.append(song_vector)                   
 
     matrix = np.array(list(vectors))
     return np.mean(matrix, axis=0)
@@ -179,20 +180,20 @@ def map_likert(metrics):
         mapped.append(value)
     return mapped
 
-def calculate_score(song,rec,dataset):
+def calculate_score(song_data,rec,dataset):
     """
     calculates the weighted euclidean distance between two songs
     """
     similarity = 0
     # get the song data
     rec_data = get_data(rec[0],rec[1],dataset)    
-    song_data = get_data(song[0],song[1],dataset)
     rec_data = rec_data.copy()
     song_data = song_data.copy()
 
     # gets rid of the different versions of the songs 
-    song_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
     rec_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
+    song_data.drop_duplicates(subset=['track_name'], keep='first', inplace=True)
+
     
     # loop through each feature and calculates the weighted euclidean distance
     for feature, weight in info.feature_weights.items():
@@ -203,7 +204,7 @@ def calculate_score(song,rec,dataset):
         similarity += weight * np.sum(diff**2)
     return rec_data['explicit'], similarity
 
-def feature_score(songs,recs,dataset):
+def feature_score(song_data,recs,dataset):
     """
     calculates a score between the song and potential recs based on their
     audio features. this takes account for the feature weighting
@@ -211,11 +212,10 @@ def feature_score(songs,recs,dataset):
     """
     new_recs = []
     scores = []
-    song = songs[0]
     
     for rec in recs:
         # calculates the weighted similarity scores
-        explicit,similarity = calculate_score(song,rec,dataset)
+        explicit,similarity = calculate_score(song_data,rec,dataset)
         scores.append({'song':rec[0],'artist':rec[1], 'explicit':explicit,'similarity':similarity})
     # sorts in descending order
     scores.sort(key=lambda x: x['similarity'], reverse=True)
@@ -415,6 +415,9 @@ def pick_random(num,songs,curr_recs,explicit,dataset,c_song):
     iters = 0
     loading_animation()
     scores = feature_score(c_song,songs,dataset)
+    # get rid of duplicates
+    temp = set(tuple(song) for song in songs)
+    songs = [list(song) for song in temp]
 
     # not enough songs
     if len(songs) < num:
@@ -475,13 +478,14 @@ def get_recs(ss,up,mv,profile,dataset):
     ex = profile[0]
     song_list = profile[-1]
     song = profile[-1][0]
+    song_data = get_data(song[0],song[1],dataset)
     
-    method_ss = pick_random(6,ss,recs,ex,dataset,song)
+    method_ss = pick_random(6,ss,recs,ex,dataset,song_data)
     recs.append(method_ss)
-    method_up = pick_random(2,up,recs,ex,dataset,song)
+    method_up = pick_random(2,up,recs,ex,dataset,song_data)
     recs.append(method_up)
-    method_mv = pick_random(2,mv,recs,ex,dataset,song)
-    
+    method_mv = pick_random(2,mv,recs,ex,dataset,song_data)
+    recs.append(method_mv)
     print("\n---------------------------------")
     print("\nHere is your recommendations!")
     print("\nBased on your song list:")
@@ -499,9 +503,13 @@ def recommend(dataset,profile, n=10):
     2. assigning the user to a cluster first based on their audio features preferences 
     3. clustering the mean vector
     """
+    '''
     print("\nMaking your recommendations...\n")
     loading_animation()
     
+    '''
+    
+
     # supresses all the clustering and scaling warnings
     original_filters = warnings.filters[:]
     warnings.filterwarnings("ignore")
@@ -524,7 +532,7 @@ def recommend(dataset,profile, n=10):
     # method three 
     mv = vector_recs(center,song_data,profile,pipeline,scaler,g_pipeline,subset,columns)
     warnings.filters = original_filters
-    get_recs(ss,up,mv,profile,dataset)
+    get_recs(ss, up, mv, profile, dataset)
     
 def run():
     data = pd.read_csv(os.environ['DATASET_PATH'], encoding = "utf-8")
