@@ -36,7 +36,7 @@ def error(num):
     if num == 1:
         print("This song does not exist in our dataset or in Spotify's catalog!")
     elif num == 2:
-        print("We do not have enough songs to make a recommendation. Please retake the survey.")
+        print("\nWe do not have enough songs to make a recommendation. Please retake the survey.\n")
 
 def loading_animation():
     chars = "/-\|"
@@ -95,10 +95,9 @@ def get_data(name, artist, dataset):
             return data
         else:
             raise ValueError("Song cannot be found")
-            exit()
     
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"\rError: {e}")
         return None       
 
 def mean_vector(song_list, dataset, columns):
@@ -121,6 +120,7 @@ def mean_vector(song_list, dataset, columns):
         # forces to the user to retake the survey (not implemented yet)
         if count > 2:
             error(2)
+            exit()
         song_vector = data[columns].values
         max_len = max(max_len, len(song_vector))
         # if the columns is less than the max/expected number of columns
@@ -503,16 +503,15 @@ def recommend(dataset,profile, n=10):
     2. assigning the user to a cluster first based on their audio features preferences 
     3. clustering the mean vector
     """
-    '''
-    print("\nMaking your recommendations...\n")
+    
     loading_animation()
     
-    '''
-    
-
     # supresses all the clustering and scaling warnings
     original_filters = warnings.filters[:]
     warnings.filterwarnings("ignore")
+    
+    processing("Making your graphs...")
+    
     # k mean clustering 
     pipeline, cluster_labels,song_data = song_cluster()
     # only numeric values 
@@ -524,6 +523,9 @@ def recommend(dataset,profile, n=10):
     # calculates the mean vector 
     center = mean_vector(profile[-1], dataset,columns)
     scaler = pipeline.named_steps['scaler']
+
+    loading_animation()
+    processing("Making your recommendations...")
     
     # method one
     ss = similar_songs(profile[-1],song_data,pipeline,scaler,columns, g_pipeline,subset)
