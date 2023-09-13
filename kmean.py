@@ -49,7 +49,7 @@ def elbow_method(df,title):
     graph.set(xlabel = "Number of cluster (k)",
               ylabel = "Sum Squared Error",
               title = title)
-    #plt.show()
+    plt.show()
     
 def elbow_method_genre():
     #applies the elbow method on genre subset
@@ -66,10 +66,10 @@ def genre_graph(X, genre_subset):
     genre_embedding = tsne_pipeline.fit_transform(X)
     projection = pd.DataFrame(columns=['x','y'],data=genre_embedding)
     projection['track_genre'] = genre_subset['track_genre']
-    projection['cluster'] = genre_subset['cluster']
+    projection['cluster_label'] = genre_subset['cluster_label']
 
     # visualizes the clusters in a 2D space
-    fig = px.scatter(projection, x='x', y='y', color='cluster', hover_data=['x','y','cluster','track_genre'])
+    fig = px.scatter(projection, x='x', y='y', color='cluster_label', hover_data=['x','y','cluster_label','track_genre'])
     fig.update_layout(title='genre cluster') # adds a title
     fig.write_image(os.environ['DOWNLOAD_PATH']+file_name)
     fig.show()
@@ -82,7 +82,7 @@ def genre_cluster():
     X = genre_subset.select_dtypes(np.number)
     cluster_pipeline.fit(X) # trains on data
     genre_subset.loc[:,'cluster_label'] = cluster_pipeline.predict(X) # makes predictions
-    #genre_graph(X,genre_subset)
+    genre_graph(X,genre_subset)
     return cluster_pipeline, genre_subset
     
 
@@ -93,10 +93,10 @@ def song_graph(X):
     song_embedding = pca_pipeline.fit_transform(X)
     projection = pd.DataFrame(columns=['x','y'],data=song_embedding)
     projection['title'] = song_data['track_name']
-    projection['cluster'] = song_data['cluster_label']
+    projection['cluster_label'] = song_data['cluster_label']
 
     # visualizes the song cluster
-    fig = px.scatter(projection, x='x', y='y', color='cluster', hover_data=['x','y','cluster','title'])
+    fig = px.scatter(projection, x='x', y='y', color='cluster_label', hover_data=['x','y','cluster_label','title'])
     fig.write_image(os.environ['DOWNLOAD_PATH']+file_name)
     fig.show()
     
@@ -110,7 +110,7 @@ def song_cluster():
     song_cluster_pipeline.fit(features)
     song_cluster_labels = song_cluster_pipeline.predict(features)
     song_data['cluster_label'] = song_cluster_labels
-    #song_graph(X)
+    song_graph(X)
     return song_cluster_pipeline, song_cluster_labels, song_data
 
 
