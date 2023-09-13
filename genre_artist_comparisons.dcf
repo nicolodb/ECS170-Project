@@ -1,0 +1,12 @@
+name: genre_artist_comparisons
+title: genre_artist_comparisons
+username: 1c6efv-jramamoorthi
+account: 1c6efv-jramamoorthi
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9831848
+bundleId: 7680871
+url: https://1c6efv-jramamoorthi.shinyapps.io/genre_artist_comparisons/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
